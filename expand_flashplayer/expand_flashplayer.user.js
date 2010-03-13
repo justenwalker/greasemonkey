@@ -5,11 +5,12 @@
 // @include        http://www.viddler.com/*
 // @include        http://www.dailymotion.com/video/*
 // @include        http://blip.tv/file/*
+// @include        http://www.blip.tv/file/*
 // @include        http://www.youtube.com/watch*
 // @include        http://www.wegame.com/watch/*
 // @require        http://updater.usotools.co.cc/65592.js
 // @license        GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html
-// @version        1.0.1
+// @version        1.0.2
 // ==/UserScript==
 
 function ExpandVideo() {
@@ -159,8 +160,10 @@ function ExpandVideo() {
 			adjust: function(type) {
 				if( type == 'setup' )
 				{
-					this.btnExpand.style.left = '' + (this.flash_movie.offsetLeft +  this.flash_movie.clientWidth - this.btnExpand.clientWidth - 5) + 'px';
-					this.btnExpand.style.top = '' + (this.flash_movie.offsetTop  - this.btnExpand.clientHeight - 5) + 'px';
+					var px_left = 0 + this.flash_movie.offsetLeft +  this.flash_movie.clientWidth - this.btnExpand.clientWidth - 5;
+					var px_top  = 0 + this.flash_movie.offsetTop  - this.btnExpand.clientHeight - 5;
+					this.btnExpand.style.left = px_left + 'px';
+					this.btnExpand.style.top = px_top + 'px';
 				}
 			},
 			resize: GeneralResize
