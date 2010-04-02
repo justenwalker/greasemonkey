@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name           Expand Flashplayer (YouTube, Viddler, Dailymotion, Blip.tv, WeGame)
-// @version        1.0.3
+// @version        1.0.4
 // @author         Justen Walker (http://www.justenwalker.com)
 // @description    Creates a button which expands The flash player to fill your screen. Works on YouTube, Viddler, Dailymotion, Blip.tv, and WeGame.
 // @include        http://www.viddler.com/*
@@ -36,6 +36,9 @@ function ExpandVideo() {
 	{
 		var myself = this;
 		// Get Objects
+		if( ! this.embed_id ) {
+			this.embed_id = this.get_video();
+		}
 		this.flash_movie = document.getElementById(this.embed_id);
 		this.container = this.flash_movie.parentNode;
 		this.btnExpand = document.createElement('button');
@@ -143,10 +146,24 @@ function ExpandVideo() {
 			next_video: function() {
 				var url = 'http://viddler.com/explore/' + this.properties.author + '/videos/' + ( this.properties.vidid*1 + 1);
 				window.location = url;
-	    		}
+			}
 		},
 		dailymotion: {
-			embed_id: 'videoplayer',
+			get_video : function() {
+				var elms = document.getElementsByTagName('embed');
+				for( var i = 0; i < elms.length; ++i )
+				{
+					var embed = elms[i];
+					var id = embed.id;
+
+					if( id.search(/video_player_/) > -1 )
+					{
+						return id;
+					}
+				}
+				return null;
+			},
+			embed_id: null,
 			setup: GeneralSetup,
 			expand: GeneralExpand,
 			adjust: function(type) {
@@ -201,18 +218,19 @@ function ExpandVideo() {
 					this.btnExpand.style.width = '64px';
 					this.btnExpand.style.height = '32px';
 					this.btnExpand.style.backgroundImage = 'url(http://llnw-static.wegame.com/static/images/userbar-uploadvid-bg.gif)';
-					this.repos();
-					this.btnExpand.style.left = '' + (this.flash_movie.offsetLeft + this.flash_movie.width*0.5 - 75) + 'px';
 					var current_resize = window.onresize;
 					window.onresize = function() {
 						if(current_resize) current_resize();
-						myself.repos();
+						myself.repos(1);
 					}
+					this.repos(0.5);
 				}
 			},
-			repos: function() {
-				this.btnExpand.style.left = '' + (this.flash_movie.offsetLeft + this.flash_movie.width*1 - 86) + 'px';
-				this.btnExpand.style.top = '' + (this.flash_movie.offsetTop  - this.btnExpand.clientHeight - 2) + 'px';
+			repos: function(width_factor) {
+				var myLeft =  parseInt(this.flash_movie.offsetLeft) + parseInt(this.flash_movie.width * width_factor) - 86;
+				var myTop  =  parseInt(this.flash_movie.offsetTop)  - parseInt(this.btnExpand.clientHeight) - 2;
+				this.btnExpand.style.left = myLeft + 'px';
+				this.btnExpand.style.top =  myTop  + 'px';
 			},
 			resize: GeneralResize
 		}
