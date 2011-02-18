@@ -1,36 +1,69 @@
 // ==UserScript==
-// @name           Expand Flashplayer (YouTube, Viddler, Dailymotion, Blip.tv, WeGame)
-// @version        1.0.5
+// @name           Expand Flashplayer (YouTube, Viddler, Dailymotion, Blip.tv)
+// @version        1.0.6
 // @author         Justen Walker (http://www.justenwalker.com)
-// @description    Creates a button which expands The flash player to fill your screen. Works on YouTube, Viddler, Dailymotion, Blip.tv, and WeGame.
+// @description    Creates a button which expands The flash player to fill your screen. Works on YouTube, Viddler, Dailymotion, Blip.tv.
 // @include        http://www.viddler.com/*
 // @include        http://www.dailymotion.com/video/*
 // @include        http://blip.tv/file/*
 // @include        http://www.blip.tv/file/*
 // @include        http://www.youtube.com/watch*
-// @include        http://www.wegame.com/watch/*
-// @require	   http://userscripts.org/scripts/source/38788.user.js
-// @cfu:url        http://userscripts.org/scripts/source/65592.user.js
-// @cfu:meta       http://userscripts.org/scripts/source/65592.meta.js
-// @cfu:interval   1 week
-// @cfu:timestamp  uso:timestamp
-// @cfu:version    uso:version
+// @require        http://userscripts.org/scripts/source/57756.user.js
 // @license        GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html
 // ==/UserScript==
-
+ScriptUpdater.check('65592','1.0.6');
 function ExpandVideo() {
+	var toolbarHeight = 32;
+	var getBox = function(obj) {	
+		var width = obj.clientWidth;
+		if( width == 0 ) width = obj.width;
+		var height = obj.clientHeight;
+		if(height == 0 ) height = obj.height;
+
+
+
+		var left = top = 0;
+		if( obj.offsetParent ) {
+			do {
+				left += obj.offsetLeft;
+				top  += obj.offsetTop;
+			} while ( obj = obj.offsetParent);
+		}
+		return { left: left, top: top, width: width, height: height };
+	};
+
+	var showButton = function(box,button) {
+		button.style.display = "";
+		var left = (1.0*box.left + 1.0*box.width) - 102;
+		var top = (1.0*box.top  - 22);
+		button.style.left = left + 'px';
+		button.style.top  =  top + 'px';
+	};
+	var hideButton = function(button) {
+		button.style.display = "none";
+	};
+
+	var setBox = function(box,movie,player) {
+		movie.width = box.width;
+		movie.height = box.height;
+		player.style.width = box.width + 'px';
+		player.style.height = box.height + 'px';
+		player.style.top = box.top + 'px';
+		player.style.left = box.left + 'px';
+	};
+
 	var SetupPage = function() {
-		var body = document.body;
 		var head = document.getElementsByTagName('head')[0];
-		body.innerHTML = "";
-		head.innerHTML = [
- "<style>"
-,"html, body { margin: 0px; padding 0px; background-color: #000; text-align: center; overflow: hidden; }"
-,"a { color: #000; text-decoration:none; }"
-,".toolbar { position: absolute; bottom: 0px; left: 0px; background-color: #ffa; color: #000; height: 24px; width: 100%; }"
+		var html = head.innerHTML;
+		head.innerHTML = html + [
+ "<style type='text/css' >"
+,".button-65592  { display: block; position: absolute; border: 1px solid #FF8800; background-color: #FFAA00; width: 100px; margin: 0px; padding: 0px; color: black; font-family: sans-serif; font-size: 10pt; height: 20px; z-index: 5001; }"
+,".toolbar-65592 .button-65592  { display: inline; position: static; }"
+,".button-65592:hover  { background-color: #FFEEAA;  }"
+,".toolbar-65592 { position: absolute; left 0px; background-color: #ffa; color: #000; height: " + toolbarHeight + "px; width: 100%; z-index: 5000; text-align: center; }"
+,".screen-65592  { position: absolute; z-index: 5000; }"
 ,"</style>"
 		].join("\n");
-
 	};
 	var GeneralSetup = function()
 	{
@@ -40,21 +73,37 @@ function ExpandVideo() {
 			this.embed_id = this.get_video();
 		}
 		this.flash_movie = document.getElementById(this.embed_id);
+
+		// Store the normal size of the player
+		this.properties = getBox(this.flash_movie);
+		var placeholder = document.createElement('div');
+		placeholder.id = 'placeholder_65592';
+		placeholder.style.width = this.properties.width +'px';
+		placeholder.style.height = this.properties.height +'px';
 		this.container = this.flash_movie.parentNode;
 		this.btnExpand = document.createElement('button');
-		// Insert the expand button
-		this.container.insertBefore(this.btnExpand,this.flash_movie);
-		
-		// Store the normal size of the player
-		this.properties = {
-			width: this.flash_movie.clientWidth,
-			height: this.flash_movie.clientHeight
-		};
+		this.my_player = document.createElement('div');
+		this.my_player.className = 'screen-65592';
+
+		var body = document.getElementsByTagName('body')[0];
+		body.appendChild(this.my_player);
+		body.appendChild(this.btnExpand);
+
+		//Move the movie screen inside the container div
+		var movie = this.flash_movie.cloneNode(true);
+		this.container.insertBefore(placeholder,this.flash_movie);
+		this.container.removeChild(this.flash_movie);
+		this.my_player.appendChild(movie);
+		this.flash_movie = movie;
+
+		//Set the movie width/height
+		setBox(this.properties,this.flash_movie,this.my_player);
+		showButton(this.properties,this.btnExpand);
+
 		// Style & position the Expand Button
 		this.btnExpand.innerHTML = 'Expand';
-		this.btnExpand.style.position = 'absolute';
-		this.btnExpand.style.display = 'block';
-		this.btnExpand.style.left = '' + (this.flash_movie.clientWidth  - this.btnExpand.clientWidth) + 'px';
+		this.btnExpand.className = 'button-65592';
+		
 		this.btnExpand.onclick = function() { 
 			myself.expand();
 		}
@@ -64,43 +113,41 @@ function ExpandVideo() {
 	{
 		var myself = this;
 
+		hideButton(this.btnExpand);
+
 		// Create [Normal Size] Button
 		this.btnNormal = document.createElement('button');
 		this.btnNormal.innerHTML = 'Normal Size';
+		this.btnNormal.className = 'button-65592';
 		this.btnNormal.onclick = function() {
-			myself.my_player.width = myself.properties.width;
-			myself.my_player.height = myself.properties.height;
+			setBox(myself.properties,myself.flash_movie,myself.my_player);
+			showButton(myself.properties,myself.btnExpand);
+			document.body.removeChild(myself.toolbar);
 			window.onresize = null;
-		};
-		// Create [Fullscreen] Button
-		this.btnFullscreen = document.createElement('button');
-		this.btnFullscreen.innerHTML = 'Fullscreen';
-		this.btnFullscreen.onclick = function() {
-			myself.resize();
-			window.onresize = function() { myself.resize(); }
 		};
 
 		// Create Toolbar
 		this.toolbar = document.createElement('div');
-		this.toolbar.className = 'toolbar';
+		this.toolbar.className = 'toolbar-65592';
 		this.toolbar.appendChild(this.btnNormal);
-		this.toolbar.appendChild(this.btnFullscreen);
 				
-		// Create new Flash Player
-		this.my_player = this.flash_movie.cloneNode(true);
-		this.my_player.setAttribute('bgcolor',"#000000");
+		// Expand Flash Player
+		this.my_player.className = 'screen-65592';
 
 		// Setup Page
-		SetupPage();
-		document.body.appendChild(this.my_player);
 		document.body.appendChild(this.toolbar);
 		this.resize();
 		window.onresize = function() { myself.resize(); }
 		if( this.adjust ) this.adjust('expand');
 	};
 	var GeneralResize = function() {
-		this.my_player.width = window.innerWidth;
-		this.my_player.height = window.innerHeight - 24;
+		var w = window.innerWidth;
+		var h = window.innerHeight - toolbarHeight;
+		setBox({
+			top: 0, left: 0,
+			width: w, height: h
+		},this.flash_movie,this.my_player);
+		this.toolbar.style.top = h + 'px';
 		if( this.adjust ) this.adjust('resize');
 	};
 
@@ -115,19 +162,11 @@ function ExpandVideo() {
 				{
 					// Get the author ID and Video ID
 					// Store the normal size of the player
-					this.flash_movie.style.marginTop = '8px';
 					var info = document.getElementById('smLinkValue').value;
 					var info_re = /([^\/]+)\/videos\/([0-9]+)/;
 					var matches = info_re.exec(info);
-					this.properties = {
-						width: this.flash_movie.width,
-						height: this.flash_movie.height,
-						author: matches[1],
-						vidid: matches[2]
-					};
-
-					this.btnExpand.style.left = '' + (this.flash_movie.clientWidth - this.btnExpand.clientWidth + 8 ) + 'px';
-					this.btnExpand.style.top = '-1px';
+					this.properties['author'] = matches[1];
+					this.properties['vidid'] = matches[2];
 				}
 				if( type == 'expand' ) 
 				{
@@ -135,12 +174,9 @@ function ExpandVideo() {
 					// Create [Next Video] Button
 					this.btnNext = document.createElement('button');
 					this.btnNext.innerHTML = 'Next Video';
+					this.btnNext.className = 'button-65592';
 					this.btnNext.onclick = function() { myself.next_video(); }
 					this.toolbar.appendChild(this.btnNext);
-				}
-				if( type == 'resize' )
-				{
-					this.my_player.height = window.innerHeight - 32;
 				}
 			},
 			next_video: function() {
@@ -166,76 +202,23 @@ function ExpandVideo() {
 			embed_id: null,
 			setup: GeneralSetup,
 			expand: GeneralExpand,
-			adjust: function(type) {
-				if( type == 'setup' )
-				{
-					this.btnExpand.style.left = '' + (this.flash_movie.clientWidth - this.btnExpand.clientWidth - 5 ) + 'px';
-					this.btnExpand.style.top = '-1px';
-				}
-			},
 			resize: GeneralResize
 		},
 		bliptv: {
 			embed_id: 'video_player_embed',
 			setup: GeneralSetup,
 			expand: GeneralExpand,
-			adjust: function(type) {
-				if( type == 'setup' )
-				{
-					var px_left = 0 + this.flash_movie.offsetLeft +  this.flash_movie.clientWidth - this.btnExpand.clientWidth - 5;
-					var px_top  = 0 + this.flash_movie.offsetTop  - this.btnExpand.clientHeight - 5;
-					this.btnExpand.style.left = px_left + 'px';
-					this.btnExpand.style.top = px_top + 'px';
-				}
-			},
 			resize: GeneralResize
 		},
 		youtube: {
 			embed_id: 'movie_player',
 			setup: GeneralSetup,
 			expand: GeneralExpand,
-			adjust: function(type) {
-				if( type == 'setup' )
-				{
-					this.btnExpand.className = 'yt-button yt-button-primary';
-					this.btnExpand.style.left = '' + (this.flash_movie.offsetLeft + this.flash_movie.clientWidth - this.btnExpand.clientWidth - 72) + 'px';
-					this.btnExpand.style.top = '' + (this.flash_movie.offsetTop  - this.btnExpand.clientHeight - 8) + 'px';
-				}
-			},
-			resize: GeneralResize
-		},
-		wegame: {
-			embed_id: 'flash_player_swf',
-			setup: GeneralSetup,
-			expand: GeneralExpand,
-			adjust: function(type) {
-				var myself = this;
-				if( type == 'setup' )
-				{
-					this.properties.width = this.flash_movie.width;
-					this.properties.height = this.flash_movie.height;
-					this.btnExpand.className = 'userbar2-menu-btn';
-					this.btnExpand.style.width = '64px';
-					this.btnExpand.style.height = '32px';
-					this.btnExpand.style.backgroundImage = 'url(http://llnw-static.wegame.com/static/images/userbar-uploadvid-bg.gif)';
-					var current_resize = window.onresize;
-					window.onresize = function() {
-						if(current_resize) current_resize();
-						myself.repos(1);
-					}
-					this.repos(0.5);
-				}
-			},
-			repos: function(width_factor) {
-				var myLeft =  parseInt(this.flash_movie.offsetLeft) + parseInt(this.flash_movie.width * width_factor) - 86;
-				var myTop  =  parseInt(this.flash_movie.offsetTop)  - parseInt(this.btnExpand.clientHeight) - 2;
-				this.btnExpand.style.left = myLeft + 'px';
-				this.btnExpand.style.top =  myTop  + 'px';
-			},
 			resize: GeneralResize
 		}
 	};
 
+	SetupPage();
 	// Viddler Setup
 	if( /viddler[.]com/.test(window.location) ) {
 		modules.viddler.setup();
@@ -251,10 +234,6 @@ function ExpandVideo() {
 	// YouTube Setup
 	if( /youtube[.]com/.test(window.location) ) {
 		modules.youtube.setup();
-	}
-	// WeGame Setup
-	if( /wegame[.]com/.test(window.location) ) {
-		modules.wegame.setup();
 	}
 }
 var code = "(" + ExpandVideo + ")();";
