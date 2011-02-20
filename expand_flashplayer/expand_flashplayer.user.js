@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name           Expand Flashplayer (YouTube, Viddler, Dailymotion, Blip.tv)
-// @version        1.0.6
+// @version        1.0.7
 // @author         Justen Walker (http://www.justenwalker.com)
 // @description    Creates a button which expands The flash player to fill your screen. Works on YouTube, Viddler, Dailymotion, Blip.tv.
 // @include        http://www.viddler.com/*
@@ -8,10 +8,9 @@
 // @include        http://blip.tv/file/*
 // @include        http://www.blip.tv/file/*
 // @include        http://www.youtube.com/watch*
-// @require        http://userscripts.org/scripts/source/57756.user.js
+// @require        http://usocheckup.redirectme.net/65592.js
 // @license        GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html
 // ==/UserScript==
-ScriptUpdater.check('65592','1.0.6');
 function ExpandVideo() {
 	var toolbarHeight = 32;
 	var getBox = function(obj) {	
