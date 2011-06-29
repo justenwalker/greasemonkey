@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name           Expand Flashplayer (YouTube, Viddler, Dailymotion, Blip.tv)
-// @version        1.0.7
+// @version        1.0.8
 // @author         Justen Walker (http://www.justenwalker.com)
 // @description    Creates a button which expands The flash player to fill your screen. Works on YouTube, Viddler, Dailymotion, Blip.tv.
 // @include        http://www.viddler.com/*
 // @include        http://www.dailymotion.com/video/*
-// @include        http://blip.tv/file/*
-// @include        http://www.blip.tv/file/*
+// @include        http://blip.tv/*
+// @include        http://*.blip.tv/*
 // @include        http://www.youtube.com/watch*
 // @require        http://usocheckup.redirectme.net/65592.js
 // @license        GPL version 3 or any later version; http://www.gnu.org/copyleft/gpl.html
@@ -60,7 +60,8 @@ function ExpandVideo() {
 ,".toolbar-65592 .button-65592  { display: inline; position: static; }"
 ,".button-65592:hover  { background-color: #FFEEAA;  }"
 ,".toolbar-65592 { position: absolute; left 0px; background-color: #ffa; color: #000; height: " + toolbarHeight + "px; width: 100%; z-index: 5000; text-align: center; }"
-,".screen-65592  { position: absolute; z-index: 5000; }"
+,".screen-65592  { position: absolute; z-index: 5000; background-color: #000; }"
+,".body-65592  { overflow: hidden; }"
 ,"</style>"
 		].join("\n");
 	};
@@ -84,7 +85,7 @@ function ExpandVideo() {
 		this.my_player = document.createElement('div');
 		this.my_player.className = 'screen-65592';
 
-		var body = document.getElementsByTagName('body')[0];
+		var body = document.body;
 		body.appendChild(this.my_player);
 		body.appendChild(this.btnExpand);
 
@@ -106,6 +107,7 @@ function ExpandVideo() {
 		this.btnExpand.onclick = function() { 
 			myself.expand();
 		}
+		window.onresize = SnapToPlaceholder;
 		if( this.adjust ) this.adjust('setup');
 	};
 	var GeneralExpand = function()
@@ -122,7 +124,8 @@ function ExpandVideo() {
 			setBox(myself.properties,myself.flash_movie,myself.my_player);
 			showButton(myself.properties,myself.btnExpand);
 			document.body.removeChild(myself.toolbar);
-			window.onresize = null;
+			//document.body.className = document.body.className.replace(/ body-65592/,'');
+			window.onresize = SnapToPlaceholder;
 		};
 
 		// Create Toolbar
@@ -135,6 +138,7 @@ function ExpandVideo() {
 
 		// Setup Page
 		document.body.appendChild(this.toolbar);
+		//document.body.className += ' body-65592'; 
 		this.resize();
 		window.onresize = function() { myself.resize(); }
 		if( this.adjust ) this.adjust('expand');
@@ -148,6 +152,15 @@ function ExpandVideo() {
 		},this.flash_movie,this.my_player);
 		this.toolbar.style.top = h + 'px';
 		if( this.adjust ) this.adjust('resize');
+	};
+	var SnapToPlaceholder = function() {
+		var placeholder = document.getElementById('placeholder_65592');
+		if(placeholder) {
+			var box = getBox(placeholder);
+			if(box) {
+				setBox(box,this.flash_movie,this.my_player);
+			}
+		} 	
 	};
 
 	var modules = {
@@ -204,8 +217,15 @@ function ExpandVideo() {
 			resize: GeneralResize
 		},
 		bliptv: {
-			embed_id: 'video_player_embed',
-			setup: GeneralSetup,
+			embed_id: 'BlipPlayer_embed',
+			/* 
+				Quick hack to let blip create its player object before I start searching for it.
+				Not sure why its not loaded with the page anymore - seems excessive.
+			*/
+			setup: function() {
+				var myself = this;
+				setTimeout(function() { GeneralSetup.call(myself); },2000);
+			},
 			expand: GeneralExpand,
 			resize: GeneralResize
 		},
